@@ -1,17 +1,32 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { User } from './user/entities/user.entity';
 
 @Module({
-    imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: `.env`,
+  imports: [
+    TypeOrmModule.forRootAsync({
+      inject : [ConfigService],
+      useFactory: (config: ConfigService)=>{
+        return {
+          type:'postgres',
+          database: config.get<string>("DB_DATABASE"),
+          username: config.get<string>("DB_USERNAME"),
+          password: config.get<string>("DB_PASSWORD"),
+          port: config.get<number>("DB_PORT"),
+          host:config.get<string>("DB_HOST"),
+          synchronize: process.env.NODE_ENV !== "production"  || true,
+          entities:[User]
+        }
+      }
     }),
-    MongooseModule.forRoot('mongodb://localhost:27017/test-nest'),
+    ConfigModule.forRoot({
+      isGlobal : true,
+      envFilePath : `.env`
+    }),
     UserModule,
   ],
   controllers: [AppController],

@@ -1,62 +1,60 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Login, Register } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthRolesGuard } from 'src/common/guards/auth-roles.guard';
-import { Roles } from 'src/common/decorator/user-role.decorator';
-import { Role } from 'src/common/types/enum';
+import { AuthGuard } from './guard/auth.guard';
+import { AuthRolesGuard } from './guard/auth-roles.guard';
+import { Roles } from './decorator/user-role.decorator';
+import { UserType } from '../utils/enum';
+import { CurrentUser } from './decorator/current-user.decorator';
+import { JwtPayloadType } from '../utils/types';
+import { UpdateInfoUser } from './dto/update-user.dto';
+import { AuthService } from './provider/auth.provider';
 
 @Controller('api/user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+    constructor(private readonly userService : UserService , private readonly authService : AuthService){}
 
-  @Post('auth/register')
-  register(@Body() registerDto: Register) {
-    return this.userService.register(registerDto);
-  }
+    @Post('auth/register')
+    public register(@Body() registerDto : Register){
+        return this.userService.register(registerDto)
+    }
 
-  @Post('auth/login')
-  login(@Body() loginDto: Login) {
-    return this.userService.login(loginDto);
-  }
+    @Post('auth/login')
+    @HttpCode(HttpStatus.OK)
+    public login(@Body() loginDto : Login){
+        return this.userService.login(loginDto)
+    }
 
-  @Get()
-  @UseGuards(AuthRolesGuard)
-  @Roles(Role.AMDIN)
-  findAll() {
-    return this.userService.findAllUsers();
-  }
+    @Get('')
+    @UseGuards(AuthRolesGuard)
+    @Roles(UserType.ADMIN)
+    public getUsers (){
+        return this.userService.getUsers()
+    }
 
-  @Get('/:userId')
-  @UseGuards(AuthRolesGuard)
-  @Roles(Role.AMDIN)
-  findOne(@Param('userId') userId: string) {
-    return this.userService.findOneUser(userId);
-  }
+    @Get('/current-user')
+    @UseGuards(AuthGuard)
+    public getUserById (@CurrentUser() payload : JwtPayloadType){
+        return this.userService.getUserById(payload.id)
+    }
 
-  @Patch('/:userId')
-  @UseGuards(AuthRolesGuard)
-  @Roles(Role.AMDIN)
-  update(
-    @Param('userId') userId: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    return this.userService.updateUser(userId, updateUserDto);
-  }
+    @Put('/update-user/me')
+    @Roles(UserType.ADMIN , UserType.CLIENT)
+    @UseGuards(AuthRolesGuard)
+    public updateUserForMe(@CurrentUser() payload : JwtPayloadType , @Body() updateDto : UpdateInfoUser){
+        return this.userService.updateUserById(payload.id , updateDto);
+    }
+    @Put('/update-user/:id')
+    @Roles(UserType.ADMIN)
+    @UseGuards(AuthRolesGuard)
+    public updateUser(@Param('id', ParseIntPipe) id : string, @Body() updateDto : UpdateInfoUser){
+        return this.userService.updateUserById(id , updateDto);
+    }
 
-  @Delete('/:userId')
-  @UseGuards(AuthRolesGuard)
-  @Roles(Role.AMDIN)
-  remove(@Param('userId') userId: string) {
-    return this.userService.removeUser(userId);
-  }
+    @Delete('/delete-user/:id')
+    @Roles(UserType.ADMIN , UserType.CLIENT)
+    @UseGuards(AuthRolesGuard)
+    public deleteUser(@Param('id' , ParseIntPipe) id : string , @CurrentUser() payload : JwtPayloadType ){
+        return this.userService.deleteUser(id , payload)
+    }
 }

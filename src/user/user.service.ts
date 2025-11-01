@@ -1,116 +1,97 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
 import { Login, Register } from './dto/create-user.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import { User } from './schema/user.schema';
-import { Model } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtPayloadType } from 'src/common/types/type';
-import { JwtService } from '@nestjs/jwt';
+import { JwtPayloadType} from '../utils/types'
+import { UpdateInfoUser } from './dto/update-user.dto';
+import { UserType } from '../utils/enum';
+import { AuthService } from './provider/auth.provider';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name)
-    private readonly userRepo: Model<User>,
-    private readonly jwtService: JwtService,
-  ) {}
-  async register(registerDto: Register) {
-    const { email, password, name, role } = registerDto;
-    const userFromDB = await this.userRepo.findOne({ email: email });
-    if (userFromDB) {
-      throw new HttpException('User is already exist', 400);
+    constructor(
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    private readonly authService : AuthService
+){}
+
+    /**
+     * Register 
+     * @param registerDto 
+     * @returns token
+     */
+
+    public async register(registerDto : Register){
+        return await this.authService.register(registerDto)
     }
 
-    const salt: number = 10;
-    const passwordHash = await bcrypt.hash(password, salt);
-    const newUserRegister = await this.userRepo.create({
-      name,
-      email,
-      password: passwordHash,
-      role,
-    });
-    const accessToken = await this.generateToken({
-      id: newUserRegister.id,
-      sub: newUserRegister.name,
-      role: newUserRegister.role,
-    });
-    return {
-      accessToken,
-      success: true,
-      user: newUserRegister,
-    };
-  }
 
-  async login(loginDto: Login) {
-    const { password, email } = loginDto;
-    const userFound = await this.userRepo.findOne({ email: email });
-    if (!userFound) throw new BadRequestException('invalid information');
+    /**
+     * Log in 
+     * @param loginDto 
+     * @returns token 
+     */
 
-    const isPasswordMatch = await bcrypt.compare(password, userFound.password);
-    if (!isPasswordMatch) throw new BadRequestException('invalid password');
 
-    const accessToken = await this.generateToken({
-      id: userFound.id,
-      sub: userFound.name,
-      role: userFound.role,
-    });
-    return {
-      accessToken,
-      user: userFound,
-    };
-  }
+    public async login (loginDto : Login){
+        return await this.authService.login(loginDto)
+    }
 
-  async findAllUsers() {
-    const users = await this.userRepo.find().select('-password');
-    return {
-      success: true,
-      users: users,
-    };
-  }
+    /**
+     * Get All Users 
+     * @returns User's Count And Users
+     */
 
-  async findOneUser(id: string) {
-    const user = await this.userRepo.findById(id).select('-password');
-    if (!user) throw new HttpException('User Not Found', HttpStatus.NOT_FOUND);
-    return {
-      success: true,
-      user: user,
-    };
-  }
+    public async getUsers (){
+        const users = await this.userRepo.find();
+        const userCount = await this.userRepo.count()
+        return {
+            users,
+            userCount
+        }
+    }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.userRepo.findById(id).select('-password');
-    if (!user) throw new HttpException('User Not Found', HttpStatus.NOT_FOUND);
-    const updateUser = await this.userRepo.findByIdAndUpdate(
-      id,
-      {
-        name: updateUserDto.name,
-      },
-      { new: true },
-    );
-    return {
-      success: true,
-      updateUser: updateUser,
-    };
-  }
+    /**
+     * Get User By Id 
+     * @param id 
+     * @returns User 
+     */
 
-  async removeUser(id: string) {
-    const user = await this.userRepo.findById(id).select('-password');
-    if (!user) throw new HttpException('User Not Found', HttpStatus.NOT_FOUND);
-    await this.userRepo.findByIdAndDelete(id);
-    return {
-      success: true,
-      message: 'User has been deleted',
-    };
-  }
+     public async getUserById(id: string) {
+        const user = await this.userRepo.findOneBy({ id });
+        if (!user) throw new ForbiddenException("User does not exist");
+        return user;
+    }
 
-  private generateToken(payload: JwtPayloadType): Promise<string> {
-    return this.jwtService.signAsync(payload);
-  }
+    /**
+     * Update User from db
+     * @param id 
+     * @param updateUserDto 
+     * @returns user
+     */
+
+    public async updateUserById (id : string , updateUserDto : UpdateInfoUser){
+        const {firstName,lastName} = updateUserDto 
+
+        const upUser = await this.userRepo.findOne({where : {id}})
+         upUser.firstName = firstName ?? upUser.firstName
+         upUser.lastName = lastName ?? upUser.lastName
+         return upUser;
+    }
+
+
+    /**
+     * Delete User from db 
+     * @param id 
+     * @param paylaod 
+     * @returns deleted user 
+     */
+
+    public async deleteUser(id : string , paylaod : JwtPayloadType){
+        const user = await this.userRepo.findOne({where : {id}});
+        if (user.id === paylaod?.id || paylaod.userType === UserType.ADMIN){
+            await this.userRepo.remove(user);
+            return {message : 'User has been deleted '}
+        }
+    }
 }
