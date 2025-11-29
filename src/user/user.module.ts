@@ -12,19 +12,19 @@ import { AuthService } from './provider/auth.provider';
 @Module({
   controllers: [UserController],
   providers: [UserService, AuthRolesGuard, AuthService],
-  exports: [JwtModule,UserService,AuthRolesGuard],
+  exports: [JwtModule, UserService, AuthRolesGuard],
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.registerAsync({
-      inject : [ConfigService],
-      useFactory : (config : ConfigService) =>{
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
         return {
-          global : true,
-          secret : config.get<string>("JWT_SECRET"),
-          signOptions : {expiresIn : config.get<number>("JWT_EXPIRED")}
-        }
-      }
+          global: true,
+          secret: config.get<string>('JWT_SECRET'),
+          signOptions: { expiresIn: config.get<number>('JWT_EXPIRED') },
+        };
+      },
     }),
-  ]
+  ],
 })
 export class UserModule {}
