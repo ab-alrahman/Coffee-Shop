@@ -31,9 +31,6 @@ export class User {
   @Exclude()
   password: string;
 
-  @Column({ nullable: true })
-  phone: string;
-
   @Column({ type: 'enum', enum: UserType, default: UserType.CLIENT })
   role: UserType;
 
