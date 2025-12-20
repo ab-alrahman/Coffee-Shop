@@ -29,9 +29,9 @@ export class CategoriesController {
   }
 
   @Get()
-  findAll(@Query('isActive') isActive?: string): Promise<Category[]> {
-    const includeInactiveFlag = isActive === 'true';
-    return this.categoriesService.findAll(includeInactiveFlag);
+  findAll(@Query('isActive') isActive?: boolean): Promise<Category[]> {
+    const ac = isActive === undefined ? true : isActive;
+    return this.categoriesService.findAll(ac);
   }
 
   @Get('with-count')
