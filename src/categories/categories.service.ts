@@ -9,15 +9,17 @@ import { Repository } from 'typeorm';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly cloudService: CloudinaryService,
   ) {}
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+  async create(createCategoryDto: CreateCategoryDto , file ?: Express.Multer.File): Promise<Category> {
     const existingCategory = await this.categoryRepository.findOne({
       where: { name: createCategoryDto.name },
     });
@@ -26,6 +28,10 @@ export class CategoriesService {
       throw new ConflictException('فئة بهذا الاسم موجودة بالفعل');
     }
 
+    if (file){
+      const result = await this.cloudService.uploadFile(file)
+      createCategoryDto.image = result.secure_url
+    }
     try {
       const category = this.categoryRepository.create(createCategoryDto);
       return await this.categoryRepository.save(category);
@@ -76,10 +82,10 @@ export class CategoriesService {
   async update(
     id: string,
     updateCategoryDto: UpdateCategoryDto,
+    file?: Express.Multer.File
   ): Promise<Category> {
     const category = await this.findOne(id);
 
-    // التحقق من عدم وجود فئة أخرى بنفس الاسم الجديد
     if (updateCategoryDto.name && updateCategoryDto.name !== category.name) {
       const existingCategory = await this.categoryRepository.findOne({
         where: { name: updateCategoryDto.name },
@@ -90,6 +96,10 @@ export class CategoriesService {
       }
     }
 
+    if (file){
+      const result = await this.cloudService.uploadFile(file)
+      updateCategoryDto.image = result.secure_url;
+    }
     Object.assign(category, updateCategoryDto);
 
     try {

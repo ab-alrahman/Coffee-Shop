@@ -22,4 +22,8 @@ export class CreateCategoryDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   isActive?: boolean = true;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
 }

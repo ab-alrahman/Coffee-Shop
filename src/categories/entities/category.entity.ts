@@ -23,6 +23,9 @@ export class Category {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ nullable: true })
+  image: string;
+
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];
 

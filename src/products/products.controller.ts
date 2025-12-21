@@ -11,12 +11,14 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   Query,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { Product } from './entities/product.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('api/v1/products')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -25,8 +27,9 @@ export class ProductsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createProductDto: CreateProductDto): Promise<Product> {
-    return this.productsService.create(createProductDto);
+  @UseInterceptors(FileInterceptor('product-image'))
+  create(@Body() createProductDto: CreateProductDto , @UploadedFile() file ?: Express.Multer.File): Promise<Product> {
+    return this.productsService.create(createProductDto , file);
   }
 
   @Get()
@@ -52,11 +55,13 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('product-image'))
   update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @UploadedFile() file?: Express.Multer.File,
   ): Promise<Product> {
-    return this.productsService.update(id, updateProductDto);
+    return this.productsService.update(id, updateProductDto, file);
   }
 
   @Delete(':id')

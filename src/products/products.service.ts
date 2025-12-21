@@ -9,15 +9,21 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { Product } from './entities/product.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createProductDto: CreateProductDto): Promise<Product> {
+  async create(createProductDto: CreateProductDto, file?: Express.Multer.File): Promise<Product> {
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      createProductDto.image = uploadResult.secure_url;
+    }
     try {
       const product = this.productRepository.create(createProductDto);
       await this.productRepository.save(product);
@@ -140,8 +146,13 @@ export class ProductsService {
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
+    file?: Express.Multer.File
   ): Promise<Product> {
     const product = await this.findOne(id);
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      updateProductDto.image = uploadResult.secure_url;
+    }
     Object.assign(product, updateProductDto);
     try {
       return await this.productRepository.save(product);
