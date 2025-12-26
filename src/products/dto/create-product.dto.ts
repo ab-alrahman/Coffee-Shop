@@ -26,8 +26,8 @@ export class CreateProductDto {
   price: number;
 
   @IsString()
-  @IsNotEmpty()
-  image: string;
+  @IsOptional()
+  image?: string;
 
   @IsOptional()
   @IsUUID('4', { message: 'معرف الفئة يجب أن يكون UUID صالح' })

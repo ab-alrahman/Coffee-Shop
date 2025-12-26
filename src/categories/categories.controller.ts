@@ -27,8 +27,11 @@ export class CategoriesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('category-image'))
-  create(@Body() createCategoryDto: CreateCategoryDto , @UploadedFile() file ?: Express.Multer.File): Promise<Category> {
-    return this.categoriesService.create(createCategoryDto , file);
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<Category> {
+    return this.categoriesService.create(createCategoryDto, file);
   }
 
   @Get()
@@ -61,9 +64,9 @@ export class CategoriesController {
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-    @UploadedFile() file ?: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File,
   ): Promise<Category> {
-    return this.categoriesService.update(id, updateCategoryDto , file);
+    return this.categoriesService.update(id, updateCategoryDto, file);
   }
 
   @Patch(':id/toggle-status')

@@ -28,14 +28,15 @@ export class ProductsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('product-image'))
-  create(@Body() createProductDto: CreateProductDto , @UploadedFile() file ?: Express.Multer.File): Promise<Product> {
-    return this.productsService.create(createProductDto , file);
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<Product> {
+    return this.productsService.create(createProductDto, file);
   }
 
   @Get()
-  findAll(
-    @Query() queryDto: ProductQueryDto,
-  ): Promise<{
+  findAll(@Query() queryDto: ProductQueryDto): Promise<{
     products: Product[];
     total: number;
     page: number;

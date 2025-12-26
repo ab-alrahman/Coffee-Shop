@@ -41,7 +41,7 @@ export class DeliveriesController {
   @Get()
   @UseGuards(AuthRolesGuard)
   @Roles(UserType.ADMIN)
-  findAll(@CurrentUser() payload : JwtPayloadType): Promise<Delivery[]> {
+  findAll(@CurrentUser() payload: JwtPayloadType): Promise<Delivery[]> {
     const userId = payload.userType === UserType.ADMIN ? undefined : payload.id;
     return this.deliveriesService.findAll(userId);
   }
@@ -49,7 +49,7 @@ export class DeliveriesController {
   @Get('order/:orderId')
   findByOrder(
     @Param('orderId') orderId: string,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Delivery> {
     return this.deliveriesService.findByOrder(
       orderId,

@@ -31,23 +31,26 @@ export class AddressesController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() createAddressDto: CreateAddressDto,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Address> {
     return this.addressesService.create(createAddressDto, payload.id);
   }
 
   @Get()
-  findAll(@CurrentUser() payload : JwtPayloadType): Promise<Address[]> {
+  findAll(@CurrentUser() payload: JwtPayloadType): Promise<Address[]> {
     return this.addressesService.findAll(payload.id);
   }
 
   @Get('default')
-  findDefault(@CurrentUser() payload : JwtPayloadType): Promise<Address> {
+  findDefault(@CurrentUser() payload: JwtPayloadType): Promise<Address> {
     return this.addressesService.findDefault(payload.id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() payload : JwtPayloadType): Promise<Address> {
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser() payload: JwtPayloadType,
+  ): Promise<Address> {
     return this.addressesService.findOne(id, payload.id);
   }
 
@@ -55,13 +58,16 @@ export class AddressesController {
   update(
     @Param('id') id: string,
     @Body() updateAddressDto: UpdateAddressDto,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Address> {
     return this.addressesService.update(id, updateAddressDto, payload.id);
   }
 
   @Patch(':id/set-default')
-  setDefault(@Param('id') id: string, @CurrentUser() payload : JwtPayloadType): Promise<Address> {
+  setDefault(
+    @Param('id') id: string,
+    @CurrentUser() payload: JwtPayloadType,
+  ): Promise<Address> {
     return this.addressesService.setDefault(id, payload.id);
   }
 

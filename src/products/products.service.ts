@@ -19,7 +19,10 @@ export class ProductsService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createProductDto: CreateProductDto, file?: Express.Multer.File): Promise<Product> {
+  async create(
+    createProductDto: CreateProductDto,
+    file?: Express.Multer.File,
+  ): Promise<Product> {
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
       createProductDto.image = uploadResult.secure_url;
@@ -29,13 +32,11 @@ export class ProductsService {
       await this.productRepository.save(product);
       return product;
     } catch (error) {
-      throw new BadRequestException(error,'فشل في إنشاء المنتج');
+      throw new BadRequestException(error, 'فشل في إنشاء المنتج');
     }
   }
 
-  async findAll(
-    queryDto?: ProductQueryDto,
-  ): Promise<{
+  async findAll(queryDto?: ProductQueryDto): Promise<{
     products: Product[];
     total: number;
     page: number;
@@ -146,7 +147,7 @@ export class ProductsService {
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
-    file?: Express.Multer.File
+    file?: Express.Multer.File,
   ): Promise<Product> {
     const product = await this.findOne(id);
     if (file) {

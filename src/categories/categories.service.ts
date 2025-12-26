@@ -19,7 +19,10 @@ export class CategoriesService {
     private readonly cloudService: CloudinaryService,
   ) {}
 
-  async create(createCategoryDto: CreateCategoryDto , file ?: Express.Multer.File): Promise<Category> {
+  async create(
+    createCategoryDto: CreateCategoryDto,
+    file?: Express.Multer.File,
+  ): Promise<Category> {
     const existingCategory = await this.categoryRepository.findOne({
       where: { name: createCategoryDto.name },
     });
@@ -28,9 +31,9 @@ export class CategoriesService {
       throw new ConflictException('فئة بهذا الاسم موجودة بالفعل');
     }
 
-    if (file){
-      const result = await this.cloudService.uploadFile(file)
-      createCategoryDto.image = result.secure_url
+    if (file) {
+      const result = await this.cloudService.uploadFile(file);
+      createCategoryDto.image = result.secure_url;
     }
     try {
       const category = this.categoryRepository.create(createCategoryDto);
@@ -82,7 +85,7 @@ export class CategoriesService {
   async update(
     id: string,
     updateCategoryDto: UpdateCategoryDto,
-    file?: Express.Multer.File
+    file?: Express.Multer.File,
   ): Promise<Category> {
     const category = await this.findOne(id);
 
@@ -96,8 +99,8 @@ export class CategoriesService {
       }
     }
 
-    if (file){
-      const result = await this.cloudService.uploadFile(file)
+    if (file) {
+      const result = await this.cloudService.uploadFile(file);
       updateCategoryDto.image = result.secure_url;
     }
     Object.assign(category, updateCategoryDto);

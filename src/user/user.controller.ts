@@ -68,7 +68,7 @@ export class UserController {
   ) {
     return this.userService.updateUserById(payload.id, updateDto);
   }
-  
+
   @Put('/update-user/:id')
   @Roles(UserType.ADMIN)
   @UseGuards(AuthRolesGuard)

@@ -36,7 +36,7 @@ export class ReviewsController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() createReviewDto: CreateReviewDto,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Review> {
     return this.reviewsService.create(createReviewDto, payload.id);
   }

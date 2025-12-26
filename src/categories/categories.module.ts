@@ -6,7 +6,7 @@ import { Category } from './entities/category.entity';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category]) , CloudinaryModule],
+  imports: [TypeOrmModule.forFeature([Category]), CloudinaryModule],
   controllers: [CategoriesController],
   providers: [CategoriesService],
   exports: [CategoriesService],

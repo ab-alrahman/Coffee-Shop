@@ -198,11 +198,7 @@ export class OrdersService {
     }
   }
 
-  async cancel(
-    id: string,
-    userId: string,
-    userRole?: string,
-  ): Promise<Order> {
+  async cancel(id: string, userId: string, userRole?: string): Promise<Order> {
     const order = await this.findOne(id, userId, userRole);
 
     // التحقق من إمكانية الإلغاء

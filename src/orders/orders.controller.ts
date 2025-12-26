@@ -36,24 +36,30 @@ export class OrdersController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() createOrderDto: CreateOrderDto,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Order> {
     return this.ordersService.create(createOrderDto, payload.id);
   }
 
   @Get()
-  findAll(@Query() queryDto: OrderQueryDto, @CurrentUser() payload : JwtPayloadType) {
+  findAll(
+    @Query() queryDto: OrderQueryDto,
+    @CurrentUser() payload: JwtPayloadType,
+  ) {
     return this.ordersService.findAll(queryDto, payload.id, payload.userType);
   }
 
   @Get('stats')
-  getStats(@CurrentUser() payload : JwtPayloadType) {
+  getStats(@CurrentUser() payload: JwtPayloadType) {
     const userId = payload.userType === UserType.ADMIN ? undefined : payload.id;
     return this.ordersService.getStats(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() payload : JwtPayloadType): Promise<Order> {
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser() payload: JwtPayloadType,
+  ): Promise<Order> {
     return this.ordersService.findOne(id, payload.id, payload.userType);
   }
 
@@ -63,7 +69,7 @@ export class OrdersController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateOrderDto: UpdateOrderDto,
-    @CurrentUser() payload : JwtPayloadType,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Order> {
     return this.ordersService.updateStatus(
       id,
@@ -74,7 +80,10 @@ export class OrdersController {
   }
 
   @Patch(':id/cancel')
-  cancel(@Param('id') id: string, @CurrentUser() payload : JwtPayloadType): Promise<Order> {
+  cancel(
+    @Param('id') id: string,
+    @CurrentUser() payload: JwtPayloadType,
+  ): Promise<Order> {
     return this.ordersService.cancel(id, payload.id, payload.userType);
   }
 }

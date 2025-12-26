@@ -8,7 +8,7 @@ export class CreateAddressDto {
   @IsNotEmpty({ message: 'المدينة مطلوبة' })
   @IsString({ message: 'المدينة يجب أن تكون نص' })
   city: string;
-  
+
   @IsOptional()
   @IsString({ message: 'الدولة يجب أن تكون نص' })
   country?: string;
