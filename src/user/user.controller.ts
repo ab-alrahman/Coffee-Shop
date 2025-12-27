@@ -47,16 +47,16 @@ export class UserController {
     return this.userService.getUsers();
   }
 
+  @Get('/me')
+  @UseGuards(AuthGuard)
+  public getme(@CurrentUser() payload: JwtPayloadType) {
+    return this.userService.getUserById(payload.id);
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard)
   public getUserById(@Param('id') id: string) {
     return this.userService.getUserById(id);
-  }
-
-  @Get('/current-user')
-  @UseGuards(AuthGuard)
-  public getme(@CurrentUser() payload: JwtPayloadType) {
-    return this.userService.getUserById(payload.id);
   }
 
   @Put('/update-user/me')

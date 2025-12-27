@@ -22,7 +22,6 @@ export class AddressesService {
     userId: string,
   ): Promise<Address> {
     try {
-      // إذا كان العنوان الجديد افتراضي، قم بإلغاء الافتراضية من العناوين الأخرى
       if (createAddressDto.isDefault) {
         await this.addressRepository.update(
           { userId, isDefault: true },

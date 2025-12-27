@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
@@ -30,7 +30,10 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, userId: string): Promise<Order> {
-    // التحقق من وجود العنوان وأنه يخص المستخدم
+    if (!createOrderDto.items || createOrderDto.items.length === 0) {
+      throw new BadRequestException('لا يمكن إنشاء طلب بدون عناصر');
+    }
+
     const address = await this.addressRepository.findOne({
       where: { id: createOrderDto.addressId, userId },
     });
@@ -39,50 +42,67 @@ export class OrdersService {
       throw new NotFoundException('العنوان غير موجود أو لا يخصك');
     }
 
-    // حساب المبلغ الإجمالي والتحقق من المنتجات
-    let totalAmount = 0;
-    const orderItems: Partial<OrderItem>[] = [];
+    const uniqueProductIds = [
+      ...new Set(createOrderDto.items.map((item) => item.productId)),
+    ];
 
-    for (const item of createOrderDto.items) {
-      const product = await this.productRepository.findOne({
-        where: { id: item.productId },
-      });
+    const products = await this.productRepository.find({
+      where: { id: In(uniqueProductIds) },
+    });
 
-      if (!product) {
-        throw new NotFoundException(`المنتج ${item.productId} غير موجود`);
-      }
+    const productMap = new Map(
+      products.map((product) => [product.id, product]),
+    );
 
-      if (!product.isAvailable) {
-        throw new BadRequestException(
-          `المنتج ${product.name} غير متوفر حالياً`,
-        );
-      }
+    const missingProductId = uniqueProductIds.find(
+      (productId) => !productMap.has(productId),
+    );
 
-      const itemTotal = Number(product.price) * item.quantity;
-      totalAmount += itemTotal;
-
-      orderItems.push({
-        productId: product.id,
-        quantity: item.quantity,
-        price: product.price,
-        size: item.size,
-        customization: item.customization,
-      });
+    if (missingProductId) {
+      throw new NotFoundException(`المنتج ${missingProductId} غير موجود`);
     }
 
+    let totalAmount = 0;
+
+    const orderItems: Partial<OrderItem>[] = createOrderDto.items.map(
+      (item) => {
+        const product = productMap.get(item.productId);
+
+        if (!product) {
+          throw new NotFoundException(`المنتج ${item.productId} غير موجود`);
+        }
+
+        if (!product.isAvailable) {
+          throw new BadRequestException(
+            `المنتج ${product.name} غير متوفر حالياً`,
+          );
+        }
+
+        const price = Number(product.price);
+        const itemTotal = price * item.quantity;
+        totalAmount += itemTotal;
+
+        return {
+          productId: product.id,
+          quantity: item.quantity,
+          price,
+          size: item.size,
+          customization: item.customization,
+        };
+      },
+    );
+
     try {
-      // إنشاء الطلب
       const order = this.orderRepository.create({
         userId,
         addressId: createOrderDto.addressId,
-        totalAmount,
+        totalAmount: Number(totalAmount.toFixed(2)),
         notes: createOrderDto.notes,
         status: OrderStatus.PENDING,
       });
 
       const savedOrder = await this.orderRepository.save(order);
 
-      // إنشاء عناصر الطلب
       const items = orderItems.map((item) =>
         this.orderItemRepository.create({
           ...item,
@@ -92,7 +112,6 @@ export class OrdersService {
 
       await this.orderItemRepository.save(items);
 
-      // إرجاع الطلب مع العلاقات
       return await this.findOne(savedOrder.id, userId);
     } catch (error) {
       throw new BadRequestException('فشل في إنشاء الطلب');
@@ -102,14 +121,23 @@ export class OrdersService {
   async findAll(
     queryDto: OrderQueryDto,
     userId?: string,
-    userRole?: string,
+    userRole?: UserType,
   ): Promise<{
     orders: Order[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const { page = 1, limit = 10, status, userId: filterUserId } = queryDto;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      userId: filterUserId,
+      dateFrom,
+      dateTo,
+      minTotal,
+      maxTotal,
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.orderRepository
@@ -121,18 +149,35 @@ export class OrdersService {
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.delivery', 'delivery');
 
-    // إذا لم يكن أدمن، يعرض طلباته فقط
     if (userRole !== UserType.ADMIN && userId) {
       queryBuilder.andWhere('order.userId = :userId', { userId });
     }
 
-    // فلترة حسب المستخدم (للأدمن)
     if (filterUserId && userRole === UserType.ADMIN) {
       queryBuilder.andWhere('order.userId = :filterUserId', { filterUserId });
     }
 
     if (status) {
       queryBuilder.andWhere('order.status = :status', { status });
+    }
+
+    if (dateFrom) {
+      queryBuilder.andWhere('order.createdAt >= :dateFrom', { dateFrom });
+    }
+
+    if (dateTo) {
+      queryBuilder.andWhere('order.createdAt <= :dateTo', { dateTo });
+    }
+
+    if (minTotal !== undefined && maxTotal !== undefined) {
+      queryBuilder.andWhere(
+        'order.totalAmount BETWEEN :minTotal AND :maxTotal',
+        { minTotal, maxTotal },
+      );
+    } else if (minTotal !== undefined) {
+      queryBuilder.andWhere('order.totalAmount >= :minTotal', { minTotal });
+    } else if (maxTotal !== undefined) {
+      queryBuilder.andWhere('order.totalAmount <= :maxTotal', { maxTotal });
     }
 
     queryBuilder.orderBy('order.createdAt', 'DESC').skip(skip).take(limit);
@@ -150,7 +195,7 @@ export class OrdersService {
   async findOne(
     id: string,
     userId?: string,
-    userRole?: string,
+    userRole?: UserType,
   ): Promise<Order> {
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
@@ -162,7 +207,6 @@ export class OrdersService {
       .leftJoinAndSelect('order.delivery', 'delivery')
       .where('order.id = :id', { id });
 
-    // إذا لم يكن أدمن، يتحقق أن الطلب يخصه
     if (userRole !== UserType.ADMIN && userId) {
       queryBuilder.andWhere('order.userId = :userId', { userId });
     }
@@ -180,7 +224,7 @@ export class OrdersService {
     id: string,
     updateOrderDto: UpdateOrderDto,
     userId?: string,
-    userRole?: string,
+    userRole?: UserType,
   ): Promise<Order> {
     const order = await this.findOne(id, userId, userRole);
 
@@ -198,7 +242,11 @@ export class OrdersService {
     }
   }
 
-  async cancel(id: string, userId: string, userRole?: string): Promise<Order> {
+  async cancel(
+    id: string,
+    userId: string,
+    userRole?: UserType,
+  ): Promise<Order> {
     const order = await this.findOne(id, userId, userRole);
 
     // التحقق من إمكانية الإلغاء

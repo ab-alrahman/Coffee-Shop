@@ -7,7 +7,7 @@ import {
   ValidateNested,
   IsInt,
   Min,
-  IsNumber,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -19,6 +19,7 @@ export class OrderItemDto {
   @IsNotEmpty({ message: 'الكمية مطلوبة' })
   @IsInt({ message: 'الكمية يجب أن تكون رقم صحيح' })
   @Min(1, { message: 'الكمية يجب أن تكون على الأقل 1' })
+  @Type(() => Number)
   quantity: number;
 
   @IsOptional()
@@ -41,6 +42,7 @@ export class CreateOrderDto {
 
   @IsNotEmpty({ message: 'عناصر الطلب مطلوبة' })
   @IsArray({ message: 'عناصر الطلب يجب أن تكون مصفوفة' })
+  @ArrayMinSize(1, { message: 'يجب إضافة عنصر واحد على الأقل إلى الطلب' })
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];

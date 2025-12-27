@@ -1,5 +1,13 @@
-import { IsOptional, IsEnum, IsUUID } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsInt,
+  Min,
+  IsNumber,
+  IsDateString,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 import { OrderStatus } from 'src/utils/order-enums';
 
 export class OrderQueryDto {
@@ -12,10 +20,34 @@ export class OrderQueryDto {
   userId?: string;
 
   @IsOptional()
-  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Transform(({ value }) => parseInt(value, 10))
   page?: number = 1;
 
   @IsOptional()
-  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Transform(({ value }) => parseInt(value, 10))
   limit?: number = 10;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  minTotal?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  maxTotal?: number;
 }

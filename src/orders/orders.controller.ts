@@ -5,14 +5,10 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   HttpStatus,
   HttpCode,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Query,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -28,7 +24,6 @@ import { CurrentUser } from 'src/user/decorator/current-user.decorator';
 
 @Controller('api/v1/orders')
 @UseGuards(AuthGuard)
-@UseInterceptors(ClassSerializerInterceptor)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
@@ -45,7 +40,12 @@ export class OrdersController {
   findAll(
     @Query() queryDto: OrderQueryDto,
     @CurrentUser() payload: JwtPayloadType,
-  ) {
+  ): Promise<{
+    orders: Order[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     return this.ordersService.findAll(queryDto, payload.id, payload.userType);
   }
 
