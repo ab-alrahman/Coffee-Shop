@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Post,
   Put,
   UseGuards,
@@ -74,7 +73,7 @@ export class UserController {
   @Roles(UserType.ADMIN)
   @UseGuards(AuthRolesGuard)
   public updateUser(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id') id: string,
     @Body() updateDto: UpdateInfoUser,
   ) {
     return this.userService.updateUserById(id, updateDto);
@@ -84,7 +83,7 @@ export class UserController {
   @Roles(UserType.ADMIN, UserType.CLIENT)
   @UseGuards(AuthRolesGuard)
   public deleteUser(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser() payload: JwtPayloadType,
   ) {
     return this.userService.deleteUser(id, payload);
