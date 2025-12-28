@@ -69,9 +69,13 @@ export class DeliveriesController {
   update(
     @Param('id') id: string,
     @Body() updateDeliveryDto: UpdateDeliveryDto,
-    @Request() req,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Delivery> {
-    return this.deliveriesService.update(id, updateDeliveryDto, req.user.role);
+    return this.deliveriesService.update(
+      id,
+      updateDeliveryDto,
+      payload.userType,
+    );
   }
 
   @Patch(':id/assign-driver')
@@ -80,13 +84,13 @@ export class DeliveriesController {
   assignDriver(
     @Param('id') id: string,
     @Body() body: { driverName: string; driverPhone: string },
-    @Request() req,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Delivery> {
     return this.deliveriesService.assignDriver(
       id,
       body.driverName,
       body.driverPhone,
-      req.user.role,
+      payload.userType,
     );
   }
 
@@ -96,8 +100,8 @@ export class DeliveriesController {
   updateStatus(
     @Param('id') id: string,
     @Param('status') status: DeliveryStatus,
-    @Request() req,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Delivery> {
-    return this.deliveriesService.updateStatus(id, status, req.user.role);
+    return this.deliveriesService.updateStatus(id, status, payload.userType);
   }
 }

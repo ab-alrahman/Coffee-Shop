@@ -12,7 +12,6 @@ import {
   ClassSerializerInterceptor,
   Query,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -61,17 +60,20 @@ export class ReviewsController {
   update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
-    @Request() req,
+    @CurrentUser() payload: JwtPayloadType,
   ): Promise<Review> {
-    return this.reviewsService.update(id, updateReviewDto, req.user.id);
+    return this.reviewsService.update(id, updateReviewDto, payload.id);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard, AuthRolesGuard)
   @Roles(UserType.ADMIN, UserType.CLIENT)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string, @Request() req): Promise<void> {
-    const isAdmin = req.user.role === UserType.ADMIN;
-    return this.reviewsService.remove(id, req.user.id, isAdmin);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() payload: JwtPayloadType,
+  ): Promise<void> {
+    const isAdmin = payload.userType === UserType.ADMIN;
+    return this.reviewsService.remove(id, payload.id, isAdmin);
   }
 }
